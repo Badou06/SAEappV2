@@ -1,17 +1,14 @@
-PY
-Copier
-
 # =============================================================
 # CITY FIGHTING - PLATEFORME D'AIDE À LA DÉCISION URBAINE
-# VERSION ULTIME FINALE (V12.0) - FULL MASTER SD 2026
+# VERSION ULTIME FINALE (V13.0) - FULL MASTER SD 2026
 # =============================================================
- 
+
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
- 
+
 # 1. CONFIGURATION DE LA PAGE
 st.set_page_config(
     page_title="City Fighting | Intelligence Urbaine",
@@ -19,24 +16,24 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
- 
+
 # 2. DESIGN SYSTEM COMPLET (CSS PREMIUM)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
- 
+
     :root {
         --color-alpha: #6366F1;
         --color-beta: #F43F5E;
         --sidebar-bg: #0F172A;
         --bg-main: #F8FAFC;
     }
- 
+
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
         background-color: var(--bg-main);
     }
- 
+
     [data-testid="stSidebar"] {
         background-color: var(--sidebar-bg);
         border-right: 1px solid rgba(255,255,255,0.1);
@@ -57,7 +54,7 @@ st.markdown("""
         font-weight: 800 !important;
         letter-spacing: 1px;
     }
- 
+
     div[data-testid="stMetric"] {
         background: white;
         border: 1px solid #E2E8F0;
@@ -77,7 +74,7 @@ st.markdown("""
         text-transform: uppercase;
         font-size: 0.75rem !important;
     }
- 
+
     .hero-section {
         background: white;
         padding: 2.5rem;
@@ -87,7 +84,7 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
- 
+
     .analysis-box {
         background: #EEF2FF;
         padding: 25px;
@@ -109,7 +106,7 @@ st.markdown("""
         margin-top: 8px;
         line-height: 1.5;
     }
- 
+
     .supplement-box {
         background: #F0FDF4;
         padding: 25px;
@@ -131,26 +128,26 @@ st.markdown("""
         margin-top: 8px;
         line-height: 1.5;
     }
- 
+
     .stTabs [data-baseweb="tab-list"] { gap: 20px; }
     .stTabs [data-baseweb="tab"] { font-weight: 600; color: #64748B; }
     .stTabs [aria-selected="true"] { color: var(--color-alpha) !important; border-bottom: 2px solid var(--color-alpha) !important; }
- 
+
     #MainMenu, footer, header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
- 
+
 # 3. FONCTIONS DE CALCUL & DATA
 @st.cache_data
 def load_data():
     return pd.read_csv("data/villes.csv", encoding="utf-8")
- 
+
 def calculer_score_attractivite(data):
     s_emploi = (20 - data['taux_chomage']) / 15 * 100
     s_logement = (35 - data['loyer_m2']) / 26 * 100
     s_soleil = (data['ensoleillement_h'] / 2900) * 100
     return round((s_emploi * 0.4) + (s_logement * 0.4) + (s_soleil * 0.2), 1)
- 
+
 def get_radar_chart(d1, d2, v1, v2):
     cat = ['Emploi', 'Logement', 'Soleil', 'Culture', 'Formation']
     def norm(v, vmin, vmax): return min(100, max(0, (v - vmin) / (vmax - vmin) * 100))
@@ -161,7 +158,7 @@ def get_radar_chart(d1, d2, v1, v2):
     fig.add_trace(go.Scatterpolar(r=v2_v, theta=cat, fill='toself', name=v2, line_color='#F43F5E'))
     fig.update_layout(polar=dict(radialaxis=dict(visible=False, range=[0, 100]), angularaxis=dict(tickfont=dict(size=11, color="#64748B"))), paper_bgcolor='rgba(0,0,0,0)', height=450)
     return fig
- 
+
 def get_temp_curve(d, name, color):
     """Interpolation sinusoïdale de la température mensuelle (jan=1, jul=7)"""
     months = list(range(1, 13))
@@ -170,7 +167,7 @@ def get_temp_curve(d, name, color):
     amp = (d['temp_jul'] - d['temp_jan']) / 2
     temps = [round(avg + amp * np.sin(2 * np.pi * (m - 4) / 12), 1) for m in months]
     return labels, temps
- 
+
 def get_precip_monthly(d):
     """Estimation mensuelle des précipitations selon le profil climatique"""
     total = d['precipitations_mm']
@@ -185,37 +182,37 @@ def get_precip_monthly(d):
     labels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
     values = [round(total * p) for p in profil]
     return labels, values
- 
+
 # 4. SIDEBAR
 df = load_data()
 df['score'] = df.apply(calculer_score_attractivite, axis=1)
 villes_list = sorted(df['ville'].unique())
- 
+
 with st.sidebar:
     st.markdown("## CITY FIGHTING")
     st.markdown("---")
     v1_name = st.selectbox("VILLE RÉFÉRENCE (ALPHA)", villes_list, index=0)
     v2_name = st.selectbox("VILLE COMPARATIF (BETA)", villes_list, index=1)
- 
+
     st.markdown("<br>"*5, unsafe_allow_html=True)
     with st.expander("NOTES MÉTHODOLOGIQUES"):
         st.caption("ANALYSE : Algorithme décisionnel multicritère.")
         st.caption("FILTRE : Communes > 20 000 habitants.")
- 
+
     st.markdown("---")
     st.markdown("<p style='font-weight:700; color:white; font-size:0.7rem; text-transform:uppercase;'>Sources de données</p>", unsafe_allow_html=True)
     st.caption("• INSEE (Population & Chômage 2023)")
     st.caption("• DVF / OLAP (Immobilier 2024)")
     st.caption("• Météo France (Normales 1991-2020)")
     st.caption("• BPE (Équipements Culturels 2022)")
- 
+
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<p style='font-weight:800;'>MASTER V12.0</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-weight:800;'>MASTER V13.0</p>", unsafe_allow_html=True)
     st.caption("SAE DÉCISIONNELLE BUT SD")
- 
+
 d1 = df[df['ville'] == v1_name].iloc[0]
 d2 = df[df['ville'] == v2_name].iloc[0]
- 
+
 # 5. DASHBOARD
 st.markdown(f"""
 <div class="hero-section">
@@ -231,17 +228,42 @@ st.markdown(f"""
     </p>
 </div>
 """.replace(",", " "), unsafe_allow_html=True)
- 
-tabs = st.tabs(["🏆 SYNTHÈSE", "💼 ÉCONOMIE", "🏠 LOGEMENT", "🌤️ ENVIRONNEMENT", "🎭 CULTURE & SERVICES"])
- 
+
+# --- AJOUT DE L'ONGLET SOURCES & DATA ---
+tabs = st.tabs(["📍 SOURCES & DATA", "🏆 SYNTHÈSE", "💼 ÉCONOMIE", "🏠 LOGEMENT", "🌤️ ENVIRONNEMENT", "🎭 CULTURE & SERVICES"])
+
+# ─────────────────────────────────────────────────────────────
+# TAB 0 : SOURCES & DATA (NOUVEL ONGLET)
+# ─────────────────────────────────────────────────────────────
+with tabs[0]:
+    st.markdown("### 📊 Architecture et Provenance des Données")
+    
+    st.markdown("""
+    Cette plateforme repose sur une fusion de données officielles. Pour garantir une comparaison équitable, toutes les valeurs ont été normalisées à l'échelle nationale.
+    """)
+    
+    col_src1, col_src2 = st.columns([2, 1])
+    
+    with col_src1:
+        source_df = pd.DataFrame({
+            "Domaine": ["Démographie", "Marché de l'Emploi", "Marché Immobilier", "Climatologie", "Infrastructures"],
+            "Source Principale": ["INSEE (RP 2023)", "INSEE & Pôle Emploi", "DVF / OLAP (2024)", "Météo France (Normales)", "BPE (Ministère de la Culture)"],
+            "Indicateurs": ["Population, Géo-localisation", "Taux de chômage local", "Loyer m² & Prix d'achat", "Ensoleillement & Précipitations", "Musées, Cinémas, Sports"]
+        })
+        st.table(source_df)
+        
+    with col_src2:
+        st.info("**Note sur l'accès :** L'adresse `http://localhost:8501` est une adresse locale. Pour que d'autres utilisateurs accèdent à cette SAE, le projet est déployé via Streamlit Cloud.")
+        st.success("**Traitement :** Les données ont été nettoyées et consolidées via un script `build_data.py` en amont.")
+
 # ─────────────────────────────────────────────────────────────
 # TAB 1 : SYNTHÈSE GÉNÉRALE
 # ─────────────────────────────────────────────────────────────
-with tabs[0]:
+with tabs[1]:
     score1, score2 = calculer_score_attractivite(d1), calculer_score_attractivite(d2)
     winner = v1_name if score1 > score2 else v2_name
-    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Synthèse Décisionnelle</p><p class="analysis-text">Analyse comparative : <b>{winner}</b> présente l'indice de performance le plus élevé (Score : {max(score1, score2)}/100).</p></div>""", unsafe_allow_html=True)
- 
+    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Synthèse Décisionnelle</p><p class="analysis-text">Analyse comparative : <b>{winner}</b> présente l'indice de performance le plus élevé (Score : {max(score1, score2)}/100).<br><small><i>Le score global est calculé selon la pondération : Emploi (40%), Logement (40%) et Soleil (20%).</i></small></p></div>""", unsafe_allow_html=True)
+
     col_stats, col_radar = st.columns([1.5, 2.5])
     with col_stats:
         st.metric(f"Score {v1_name}", f"{score1}%")
@@ -251,10 +273,10 @@ with tabs[0]:
         st.metric(f"Habitants {v2_name}", f"{int(d2['population']):,}".replace(",", " "))
     with col_radar:
         st.plotly_chart(get_radar_chart(d1, d2, v1_name, v2_name), use_container_width=True)
- 
+
     # ── SUPPLÉMENT : Jauges + Classement national ──────────────
     st.markdown("""<div class="supplement-box"><p class="supplement-title">📊 Analyse Complémentaire</p><p class="supplement-text">Position des deux villes dans le classement national d'attractivité et comparaison multidimensionnelle.</p></div>""", unsafe_allow_html=True)
- 
+
     sg1, sg2 = st.columns(2)
     with sg1:
         fig_gauge1 = go.Figure(go.Indicator(
@@ -275,7 +297,7 @@ with tabs[0]:
         ))
         fig_gauge1.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_gauge1, use_container_width=True)
- 
+
     with sg2:
         fig_gauge2 = go.Figure(go.Indicator(
             mode="gauge+number+delta",
@@ -295,12 +317,12 @@ with tabs[0]:
         ))
         fig_gauge2.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_gauge2, use_container_width=True)
- 
+
     # Classement top 15 national
     df_sorted = df.sort_values('score', ascending=False).reset_index(drop=True)
     rank1 = df_sorted[df_sorted['ville'] == v1_name].index[0] + 1
     rank2 = df_sorted[df_sorted['ville'] == v2_name].index[0] + 1
- 
+
     top15 = df_sorted.head(15).copy()
     colors = []
     for v in top15['ville']:
@@ -310,7 +332,7 @@ with tabs[0]:
             colors.append('#F43F5E')
         else:
             colors.append('#CBD5E1')
- 
+
     fig_rank = go.Figure(go.Bar(
         x=top15['ville'],
         y=top15['score'],
@@ -328,32 +350,32 @@ with tabs[0]:
         showlegend=False
     )
     st.plotly_chart(fig_rank, use_container_width=True)
- 
+
     # Comparaison radar étendu (6 critères)
     st.caption(f"📍 Position nationale : **{v1_name}** #{rank1} sur {len(df)} villes · **{v2_name}** #{rank2} sur {len(df)} villes")
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
 # TAB 2 : ÉCONOMIE
 # ─────────────────────────────────────────────────────────────
-with tabs[1]:
+with tabs[2]:
     diff_c = round(d1['taux_chomage'] - d2['taux_chomage'], 1)
-    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Analyse de l'Emploi</p><p class="analysis-text">Le marché est plus dynamique à <b>{v1_name if d1['taux_chomage'] < d2['taux_chomage'] else v2_name}</b>.</p></div>""", unsafe_allow_html=True)
- 
+    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Analyse de l'Emploi</p><p class="analysis-text">Le marché est plus dynamique à <b>{v1_name if d1['taux_chomage'] < d2['taux_chomage'] else v2_name}</b>.<br><small><i>Critère d'emploi : Pondération de 40% dans le score final.</i></small></p></div>""", unsafe_allow_html=True)
+
     e1, e2, e3 = st.columns(3)
     e1.metric(f"Chômage {v1_name}", f"{d1['taux_chomage']}%")
     e2.metric(f"Chômage {v2_name}", f"{d2['taux_chomage']}%", delta=-diff_c, delta_color="inverse")
     e3.metric("Moyenne Nationale", "7.3%")
- 
+
     st.plotly_chart(go.Figure(data=[
         go.Bar(name=v1_name, x=['Taux de chômage'], y=[d1['taux_chomage']], marker_color='#6366F1'),
         go.Bar(name=v2_name, x=['Taux de chômage'], y=[d2['taux_chomage']], marker_color='#F43F5E'),
         go.Bar(name='Moyenne France', x=['Taux de chômage'], y=[7.3], marker_color='#94A3B8'),
     ]).update_layout(height=400, barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis=dict(gridcolor='#F1F5F9', title="Taux (%)")), use_container_width=True)
- 
+
     # ── SUPPLÉMENT : Distribution nationale + jauges ───────────
     st.markdown("""<div class="supplement-box"><p class="supplement-title">📊 Analyse Complémentaire</p><p class="supplement-text">Distribution du chômage dans toutes les villes françaises et positionnement des deux villes dans l'échiquier national.</p></div>""", unsafe_allow_html=True)
- 
+
     sc1, sc2 = st.columns(2)
     with sc1:
         # Distribution histogramme du chômage
@@ -372,7 +394,7 @@ with tabs[1]:
             yaxis=dict(title="Nombre de villes", gridcolor='#F1F5F9'),
         )
         st.plotly_chart(fig_hist, use_container_width=True)
- 
+
     with sc2:
         # Top 10 meilleures villes emploi
         df_emp = df.nsmallest(12, 'taux_chomage')[['ville', 'taux_chomage']].reset_index(drop=True)
@@ -390,7 +412,7 @@ with tabs[1]:
             yaxis=dict(title="Taux (%)", gridcolor='#F1F5F9'),
         )
         st.plotly_chart(fig_emp, use_container_width=True)
- 
+
     # Chômage vs population scatter
     fig_scatter_emp = px.scatter(
         df, x='population', y='taux_chomage', size='population',
@@ -411,14 +433,14 @@ with tabs[1]:
         ))
     fig_scatter_emp.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     st.plotly_chart(fig_scatter_emp, use_container_width=True)
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
 # TAB 3 : LOGEMENT
 # ─────────────────────────────────────────────────────────────
-with tabs[2]:
-    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Analyse du Logement</p><p class="analysis-text">Pression immobilière supérieure à <b>{v1_name if d1['prix_achat_m2'] > d2['prix_achat_m2'] else v2_name}</b>.</p></div>""", unsafe_allow_html=True)
- 
+with tabs[3]:
+    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Analyse du Logement</p><p class="analysis-text">Pression immobilière supérieure à <b>{v1_name if d1['prix_achat_m2'] > d2['prix_achat_m2'] else v2_name}</b>.<br><small><i>Critère logement : Pondération de 40% dans le score final.</i></small></p></div>""", unsafe_allow_html=True)
+
     cl1, cl2 = st.columns(2)
     with cl1:
         st.plotly_chart(go.Figure(data=[
@@ -430,28 +452,28 @@ with tabs[2]:
             go.Bar(name=v1_name, x=['Achat'], y=[d1['prix_achat_m2']], marker_color='#6366F1'),
             go.Bar(name=v2_name, x=['Achat'], y=[d2['prix_achat_m2']], marker_color='#F43F5E')
         ]).update_layout(height=300, title="Prix Achat (€/m²)", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis=dict(gridcolor='#F1F5F9')), use_container_width=True)
- 
+
     st.divider()
     surf = st.select_slider("Simulateur de surface (m²)", options=[20, 45, 60, 90, 120], value=60)
     p1, p2 = st.columns(2)
     p1.metric(f"Budget {v1_name}", f"{int(d1['prix_achat_m2'] * surf):,} €".replace(',', ' '))
     p2.metric(f"Budget {v2_name}", f"{int(d2['prix_achat_m2'] * surf):,} €".replace(',', ' '))
- 
+
     # ── SUPPLÉMENT : Effort locatif + carte des prix ───────────
     st.markdown("""<div class="supplement-box"><p class="supplement-title">📊 Analyse Complémentaire</p><p class="supplement-text">Effort locatif théorique, positionnement immobilier national et carte des prix au m² en France.</p></div>""", unsafe_allow_html=True)
- 
+
     # Effort locatif (% salaire moyen net ~2 200€/mois)
     SALAIRE_MOYEN = 2200
     SURFACE_REF = 40  # m²
     effort1 = round((d1['loyer_m2'] * SURFACE_REF) / SALAIRE_MOYEN * 100, 1)
     effort2 = round((d2['loyer_m2'] * SURFACE_REF) / SALAIRE_MOYEN * 100, 1)
     effort_national = round((df['loyer_m2'].mean() * SURFACE_REF) / SALAIRE_MOYEN * 100, 1)
- 
+
     se1, se2, se3 = st.columns(3)
     se1.metric(f"Effort locatif {v1_name}", f"{effort1}%", help=f"Loyer {SURFACE_REF}m² / Salaire moyen net ({SALAIRE_MOYEN}€)")
     se2.metric(f"Effort locatif {v2_name}", f"{effort2}%", delta=round(effort2 - effort1, 1), delta_color="inverse")
     se3.metric("Effort national moyen", f"{effort_national}%")
- 
+
     sc_log1, sc_log2 = st.columns(2)
     with sc_log1:
         # Scatter loyer vs achat pour toutes les villes
@@ -472,7 +494,7 @@ with tabs[2]:
             ))
         fig_log_scatter.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_log_scatter, use_container_width=True)
- 
+
     with sc_log2:
         # Top 10 villes les moins chères à la location
         df_loyer = df.nsmallest(12, 'loyer_m2')[['ville', 'loyer_m2']].reset_index(drop=True)
@@ -490,7 +512,7 @@ with tabs[2]:
             yaxis=dict(title="Loyer €/m²", gridcolor='#F1F5F9'),
         )
         st.plotly_chart(fig_loyer, use_container_width=True)
- 
+
     # Carte géographique des prix au m²
     fig_map_log = px.scatter_mapbox(
         df, lat='lat', lon='lon', color='prix_achat_m2',
@@ -508,33 +530,33 @@ with tabs[2]:
         coloraxis_colorbar=dict(title="€/m²")
     )
     st.plotly_chart(fig_map_log, use_container_width=True)
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
 # TAB 4 : ENVIRONNEMENT
 # ─────────────────────────────────────────────────────────────
-with tabs[3]:
-    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Analyse Climatique</p><p class="analysis-text"><b>{v1_name if d1['ensoleillement_h'] > d2['ensoleillement_h'] else v2_name}</b> bénéficie d'un meilleur ensoleillement annuel.</p></div>""", unsafe_allow_html=True)
- 
+with tabs[4]:
+    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Analyse Climatique</p><p class="analysis-text"><b>{v1_name if d1['ensoleillement_h'] > d2['ensoleillement_h'] else v2_name}</b> bénéficie d'un meilleur ensoleillement annuel.<br><small><i>Critère environnemental : Pondération de 20% dans le score final.</i></small></p></div>""", unsafe_allow_html=True)
+
     m1, m2 = st.columns(2)
     m1.metric(f"Soleil {v1_name}", f"{int(d1['ensoleillement_h'])} h")
     m2.metric(f"Soleil {v2_name}", f"{int(d2['ensoleillement_h'])} h")
- 
+
     st.plotly_chart(
         go.Figure()
         .add_trace(go.Scatter(x=['Jan', 'Juil'], y=[d1['temp_jan'], d1['temp_jul']], name=v1_name, line_color='#6366F1', line_width=4))
         .add_trace(go.Scatter(x=['Jan', 'Juil'], y=[d2['temp_jan'], d2['temp_jul']], name=v2_name, line_color='#F43F5E', line_width=4))
         .update_layout(height=400, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis=dict(gridcolor='#F1F5F9', title="Température (°C)"))
     , use_container_width=True)
- 
+
     # ── SUPPLÉMENT : Courbes mensuelles complètes + précipitations ──
     st.markdown("""<div class="supplement-box"><p class="supplement-title">📊 Analyse Complémentaire</p><p class="supplement-text">Courbes de températures mensuelles interpolées sur 12 mois et répartition mensuelle estimée des précipitations.</p></div>""", unsafe_allow_html=True)
- 
+
     labels_m, temps1 = get_temp_curve(d1, v1_name, '#6366F1')
     _, temps2 = get_temp_curve(d2, v2_name, '#F43F5E')
     _, precip1 = get_precip_monthly(d1)
     _, precip2 = get_precip_monthly(d2)
- 
+
     sm1, sm2 = st.columns(2)
     with sm1:
         fig_temp12 = go.Figure()
@@ -548,7 +570,7 @@ with tabs[3]:
             legend=dict(orientation='h', yanchor='bottom', y=1.02)
         )
         st.plotly_chart(fig_temp12, use_container_width=True)
- 
+
     with sm2:
         fig_precip = go.Figure()
         fig_precip.add_trace(go.Bar(x=labels_m, y=precip1, name=v1_name, marker_color='rgba(99,102,241,0.7)'))
@@ -561,7 +583,7 @@ with tabs[3]:
             legend=dict(orientation='h', yanchor='bottom', y=1.02)
         )
         st.plotly_chart(fig_precip, use_container_width=True)
- 
+
     # Carte ensoleillement
     fig_map_sun = px.scatter_mapbox(
         df, lat='lat', lon='lon', color='ensoleillement_h',
@@ -575,7 +597,7 @@ with tabs[3]:
     )
     fig_map_sun.update_layout(mapbox_style="carto-positron", paper_bgcolor='rgba(0,0,0,0)')
     st.plotly_chart(fig_map_sun, use_container_width=True)
- 
+
     # Scatter ensoleillement vs précipitations
     fig_clim = px.scatter(
         df, x='precipitations_mm', y='ensoleillement_h',
@@ -594,26 +616,26 @@ with tabs[3]:
         ))
     fig_clim.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     st.plotly_chart(fig_clim, use_container_width=True)
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
 # TAB 5 : CULTURE & SERVICES
 # ─────────────────────────────────────────────────────────────
-with tabs[4]:
-    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Analyse des Services</p><p class="analysis-text">Comparatif des infrastructures culturelles et de la dynamique académique entre les deux entités.</p></div>""", unsafe_allow_html=True)
- 
+with tabs[5]:
+    st.markdown(f"""<div class="analysis-box"><p class="analysis-title">Analyse des Services</p><p class="analysis-text">Comparatif des infrastructures culturelles et de la dynamique académique entre les deux entités.<br><small><i>Note : Ces données sont fournies à titre indicatif et n'influencent pas le score global d'attractivité.</i></small></p></div>""", unsafe_allow_html=True)
+
     st.markdown(f"#### Infrastructures et Services — {v1_name.upper()} (ALPHA)")
     ca1, ca2, ca3 = st.columns(3)
     ca1.metric("Musées", int(d1['musees']))
     ca2.metric("Étudiants", f"{int(d1['etudiants']):,}".replace(',', ' '))
     ca3.metric("Réseau Sportif", f"{int(d1['salles_sport'])}")
- 
+
     st.markdown(f"#### Infrastructures et Services — {v2_name.upper()} (BETA)")
     cb1, cb2, cb3 = st.columns(3)
     cb1.metric("Musées", int(d2['musees']))
     cb2.metric("Étudiants", f"{int(d2['etudiants']):,}".replace(',', ' '))
     cb3.metric("Réseau Sportif", f"{int(d2['salles_sport'])}")
- 
+
     st.divider()
     clc1, clc2 = st.columns(2)
     with clc1:
@@ -626,10 +648,10 @@ with tabs[4]:
             go.Bar(name=v1_name, x=['Étudiants'], y=[d1['etudiants']], marker_color='#6366F1'),
             go.Bar(name=v2_name, x=['Étudiants'], y=[d2['etudiants']], marker_color='#F43F5E')
         ]).update_layout(height=300, title="Comparatif Étudiants", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', yaxis=dict(gridcolor='#F1F5F9')), use_container_width=True)
- 
+
     # ── SUPPLÉMENT : Métriques per capita + radar complet ──────
     st.markdown("""<div class="supplement-box"><p class="supplement-title">📊 Analyse Complémentaire</p><p class="supplement-text">Indices per capita pour une comparaison équitable indépendante de la taille des villes, et radar synthétique des équipements.</p></div>""", unsafe_allow_html=True)
- 
+
     # Métriques per 10 000 habitants
     pop1 = d1['population'] / 10000
     pop2 = d2['population'] / 10000
@@ -641,14 +663,14 @@ with tabs[4]:
     sport_pc2 = round(d2['salles_sport'] / pop2, 2)
     etud_pc1 = round(d1['etudiants'] / d1['population'] * 100, 1)
     etud_pc2 = round(d2['etudiants'] / d2['population'] * 100, 1)
- 
+
     st.markdown("##### Métriques per 10 000 habitants")
     pc1, pc2, pc3, pc4 = st.columns(4)
     pc1.metric("Musées/10k hab.", f"{musees_pc1} | {musees_pc2}", delta=round(musees_pc2 - musees_pc1, 2))
     pc2.metric("Cinémas/10k hab.", f"{cinemas_pc1} | {cinemas_pc2}", delta=round(cinemas_pc2 - cinemas_pc1, 2))
     pc3.metric("Salles sport/10k", f"{sport_pc1} | {sport_pc2}", delta=round(sport_pc2 - sport_pc1, 2))
     pc4.metric("Étudiants (%pop.)", f"{etud_pc1}% | {etud_pc2}%", delta=round(etud_pc2 - etud_pc1, 1))
- 
+
     sc_cult1, sc_cult2 = st.columns(2)
     with sc_cult1:
         # Radar per capita
@@ -656,7 +678,7 @@ with tabs[4]:
         def norm_pc(v, vmin, vmax): return min(100, max(0, (v - vmin) / (vmax - vmin) * 100))
         v1_pc = [norm_pc(musees_pc1, 0, 5), norm_pc(cinemas_pc1, 0, 2), norm_pc(sport_pc1, 0, 5), norm_pc(etud_pc1, 0, 30)]
         v2_pc = [norm_pc(musees_pc2, 0, 5), norm_pc(cinemas_pc2, 0, 2), norm_pc(sport_pc2, 0, 5), norm_pc(etud_pc2, 0, 30)]
- 
+
         fig_radar_pc = go.Figure()
         fig_radar_pc.add_trace(go.Scatterpolar(r=v1_pc, theta=cat_pc, fill='toself', name=v1_name, line_color='#6366F1'))
         fig_radar_pc.add_trace(go.Scatterpolar(r=v2_pc, theta=cat_pc, fill='toself', name=v2_name, line_color='#F43F5E'))
@@ -667,13 +689,13 @@ with tabs[4]:
             legend=dict(orientation='h', yanchor='bottom', y=-0.2)
         )
         st.plotly_chart(fig_radar_pc, use_container_width=True)
- 
+
     with sc_cult2:
         # Comparaison multi-indicateurs normalisés (barres groupées)
         indicateurs = ['Musées', 'Cinémas', 'Salles sport', 'Étudiants (k)']
         vals1 = [d1['musees'], d1['cinemas'], d1['salles_sport'], d1['etudiants'] / 1000]
         vals2 = [d2['musees'], d2['cinemas'], d2['salles_sport'], d2['etudiants'] / 1000]
- 
+
         fig_multi = go.Figure(data=[
             go.Bar(name=v1_name, x=indicateurs, y=vals1, marker_color='#6366F1'),
             go.Bar(name=v2_name, x=indicateurs, y=vals2, marker_color='#F43F5E')
@@ -686,7 +708,7 @@ with tabs[4]:
             legend=dict(orientation='h', yanchor='bottom', y=1.02)
         )
         st.plotly_chart(fig_multi, use_container_width=True)
- 
+
     # Carte culturelle
     df['musees_pc'] = df['musees'] / (df['population'] / 10000)
     fig_map_cult = px.scatter_mapbox(
